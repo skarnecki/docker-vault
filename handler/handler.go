@@ -9,6 +9,8 @@ import (
 
 	"sync"
 	"time"
+	"github.com/pkg/errors"
+	log "github.com/Sirupsen/log"
 )
 
 type Handler struct {
@@ -24,11 +26,11 @@ func NewHandler(docker *dockerapi.Client, vaultAddress, initToken, filePath stri
 	cfg := &api.Config{Address: vaultAddress}
 	client, err := api.NewClient(cfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("Error creating vault client: %s", err.Error()))
 	}
 	sec, err := client.Logical().Unwrap(strings.TrimSpace(initToken))
 	if err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("Error unwrapping token: %s", err.Error()))
 	}
 	client.SetToken(sec.Auth.ClientToken)
 
@@ -46,12 +48,11 @@ func (h Handler) Add(containerId, kind string) error {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 	h.VaultClient.Auth().Token().RenewSelf(0)
-	//TODO handle policy missing
 	token, err := h.VaultClient.Auth().Token().Create(&api.TokenCreateRequest{
 		Policies: []string{kind},
 	})
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("Error creating token for %s[%s]: %s", containerId, kind, err.Error()))
 	}
 	return WriteFile(h.DockerClient, containerId, token.WrapInfo.Token, h.Filepath)
 }
@@ -76,7 +77,7 @@ func (h Handler) GetPolicyName(imageName string) (string, error) {
 func (h Handler) RefreshPolicies(key string) error {
 	secret, err := h.VaultClient.Logical().Read(key)
 	if err != nil || secret == nil {
-		return err
+		return errors.New(fmt.Sprintf("Error fetching policies from %s: %s", key, err.Error()))
 	}
 
 	h.mutex.Lock()
@@ -98,7 +99,7 @@ func WriteFile(client *dockerapi.Client, containerId, contents, filepath string)
 	}
 	exec, err := client.CreateExec(opts)
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("Error writing token to %s on path %s: %s", containerId, filepath, err.Error()))
 	}
 
 	startOpts := dockerapi.StartExecOptions{
@@ -115,7 +116,7 @@ func WriteFile(client *dockerapi.Client, containerId, contents, filepath string)
 func RefreshLoop(handle *Handler, key string) {
 	refresh := time.Tick(10 * time.Second)
 	for range refresh {
-		fmt.Println("refreshed")
+		log.Debug("refreshed")
 		handle.RefreshToken()
 		handle.RefreshPolicies(key)
 	}
