@@ -6,7 +6,7 @@ Handles creating and injecting Vault tokens into spawned docker containers. It u
 
 ## Details
 
-To start dockervault you need to provide wrapped token with permissions to generate tokens. It listens to container start events via Docker daemon API. When container is stared it will reach for Vault mapping entry (secret/dockervault) where relation imagename => policy is stored. Then new wrapped token is generated with proper policy and injected to container filesystem.
+To start dockervault you need to provide wrapped token with permissions to generate tokens. It listens to container start events via Docker daemon API. When container is started, it will reach for Vault mapping entry (secret/dockervault). It's where relation imagename => policy is stored. Then new wrapped token is generated with proper policy and injected to container filesystem.
 
 Options:
 * --token Vault wrapped token used to generate application specific tokens
@@ -15,6 +15,10 @@ Options:
 * --dockerHost Docker server endpoint address
 * --mappingKey Path to vault entry containing imageName to policy mapping.
 * --verbose Set logger to debug level
+
+## Usage
+
+Best way to use dockervault is by spawning docker container. https://hub.docker.com/r/eskey/dockervault/
 
 ### Required Docker-Vault Token policy
 ```
