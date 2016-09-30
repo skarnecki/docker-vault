@@ -4,6 +4,9 @@ Inject Vault tokens to Docker containers!
 
 Handles creating and injecting Vault tokens into spawned docker containers. It uses map to create token with proper permissions. Injected tokens are wrapped making whole process secure.
 
+## Problem
+When using docker containers created by scheduler, there is no safe way to manage Vault tokens. Docker vault tries to address that by providing separate process that generate tokens.
+
 ## Details
 
 To start dockervault you need to provide wrapped token with permissions to generate tokens. It listens to container start events via Docker daemon API. When container is started, it will reach for Vault mapping entry (secret/dockervault). It's where relation imagename => policy is stored. Then new wrapped token is generated with proper policy and injected to container filesystem.
