@@ -1,11 +1,12 @@
 package main
 
 import (
-	log "github.com/Sirupsen/log"
+	"github.com/Sirupsen/logrus"
 	"github.com/alecthomas/kingpin"
 	dockerapi "github.com/fsouza/go-dockerclient"
 	"github.com/skarnecki/docker-vault/handler"
 	"os"
+	"strings"
 )
 
 const (
@@ -20,47 +21,48 @@ var (
 	vaultAddress = kingpin.Flag("vault", "Valut address").Default("http://127.0.0.1:8200/").String()
 	dockerHost   = kingpin.Flag("dockerHost", "Docker host address.").Default(OsxDockerSock).String()
 	mappingKey   = kingpin.Flag("mappingKey", "Location of image -> policy mapping in vault").Default(DefaultMappingKey).String()
-	verbose        = kingpin.Flag("verbose", "Enable verbose logging").Bool()
+	verbose      = kingpin.Flag("verbose", "Enable verbose logging").Bool()
 )
 
 func main() {
 	kingpin.Parse()
-	os.Setenv("DOCKER_HOST", *dockerHost)
+
 	if *verbose {
-		log.SetLevel(log.DebugLevel)
+		logrus.SetLevel(logrus.DebugLevel)
 	}
 
+	os.Setenv("DOCKER_HOST", *dockerHost)
 	docker, err := dockerapi.NewClientFromEnv()
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
-	log.Debug("Connected to Docker")
+	logrus.Debug("Connected to Docker")
 
 	handle, err := handler.NewHandler(docker, *vaultAddress, *vaultToken, *filePath)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
-	log.Debug("Connected to Vault")
+	logrus.Debug("Connected to Vault")
 
 	//listen to docker events
 	listener := make(chan *dockerapi.APIEvents)
 	if err := docker.AddEventListener(listener); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	defer func() {
 		err = docker.RemoveEventListener(listener)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 
 	}()
 
 	err = handle.RefreshPolicies(*mappingKey)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
-	log.Debug("Policies prefetch")
+	logrus.Debug("Policies prefetch")
 
 	// token refresh loop
 	go handler.RefreshLoop(handle, *mappingKey)
@@ -69,17 +71,18 @@ func main() {
 	for msg := range listener {
 		switch msg.Status {
 		case "start":
-			log.Debugf("Container started: %s [%s]", msg.Actor.ID, msg.Actor.Attributes["image"])
+			imageName := strings.Split(msg.Actor.Attributes["image"],":")[0]
+			logrus.Debugf("Container started: %s [%s]", msg.Actor.ID, imageName)
 			//TODO skips
-			value, err := handle.GetPolicyName(msg.Actor.Attributes["image"])
+			value, err := handle.GetPolicyName(imageName)
 			if err != nil {
-				log.Errorf("No policy mapping for image [%s]", msg.Actor.Attributes["image"])
+				logrus.Errorf("No policy mapping for image [%s]", imageName)
 				break
 			}
-			log.Debugf("Policy found: %s -> %s", msg.Actor.Attributes["image"], value)
+			logrus.Debugf("Policy found: %s -> %s", imageName, value)
 			err = handle.Add(msg.Actor.ID, value)
 			if err != nil {
-				log.Error(err)
+				logrus.Error(err)
 				break
 			}
 		}

@@ -9,8 +9,8 @@ import (
 
 	"sync"
 	"time"
-	"github.com/pkg/errors"
-	log "github.com/Sirupsen/log"
+	"github.com/Sirupsen/logrus"
+	"errors"
 )
 
 type Handler struct {
@@ -116,7 +116,7 @@ func WriteFile(client *dockerapi.Client, containerId, contents, filepath string)
 func RefreshLoop(handle *Handler, key string) {
 	refresh := time.Tick(10 * time.Second)
 	for range refresh {
-		log.Debug("refreshed")
+		logrus.Debug("refreshed")
 		handle.RefreshToken()
 		handle.RefreshPolicies(key)
 	}
