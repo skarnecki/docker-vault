@@ -1,8 +1,12 @@
 # docker-vault
 
-Inject Vault tokens to docker containers!
+Inject Vault tokens to Docker containers!
 
-This service reacts on new docker container started. It generates new wrapped token with specified policy and inject it to freshly started docker container filesystem.
+Handles creating and injecting Vault tokens into spawned docker containers. It uses map to create token with proper permissions. Injected tokens are wrapped making whole process secure.
+
+## Details
+
+To start dockervault you need to provide wrapped token with permissions to generate tokens. It listens to container start events via Docker daemon API. When container is stared it will reach for Vault mapping entry (secret/dockervault) where relation imagename => policy is stored. Then new wrapped token is generated with proper policy and injected to container filesystem.
 
 Options:
 * --token Vault wrapped token used to generate application specific tokens
@@ -12,12 +16,18 @@ Options:
 * --mappingKey Path to vault entry containing imageName to policy mapping.
 * --verbose Set logger to debug level
 
+### Required Docker-Vault Token policy
 ```
-Required Docker-Vault Token policy
  path "auth/token/*" {
    policy = "sudo"
  }
- path "secret/dockervault" {
+ path "secret/dockervault" { //Vault mapping entry
    policy = "read"
  }
+```
+
+### Vault mapping entry
+By default it's set to secret/dockervault. It's a simple map where key is imagename and value name of the policy. 
+```
+vault write secret/dockervault  my.docker.registry.com/foo/bar=bar
 ```
