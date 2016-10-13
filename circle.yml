@@ -11,4 +11,5 @@ machine:
         - docker
 
 test:
-    override: go test -v
+    override:
+        - go test -v
