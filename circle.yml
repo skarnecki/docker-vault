@@ -9,3 +9,6 @@ machine:
         - sudo tar -C /usr/local -xzf download/$GODIST
     services:
         - docker
+
+test:
+    override: go test -v
