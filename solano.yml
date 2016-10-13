@@ -2,7 +2,7 @@ golang:
   golang_version: 1.7
 hooks:
   worker_setup: echo "No per-worker setup in simplest case"
-  post_setup: go build .
+  post_setup: export GOPATH=$TDDIUM_REPO_ROOT && go build .
   post_build: echo "Deploy to appengine here"
 tests:
-  - go test
+  - export GOPATH=$TDDIUM_REPO_ROOT && go test 
