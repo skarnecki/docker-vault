@@ -4,4 +4,4 @@ hooks:
   worker_setup: echo "No per-worker setup in simplest case"
   post_build: echo "Deploy to appengine here"
 tests:
-  - export GOPATH=$TDDIUM_REPO_ROOT && go test
+  - pwd && ls -la && export GOPATH=$TDDIUM_REPO_ROOT && go test
