@@ -1,0 +1,20 @@
+sudo: required
+
+language: go
+
+services:
+  - docker
+
+go:
+  - 1.7
+
+matrix:
+  allow_failures:
+    - go: tip
+
+branches:
+  only:
+    - travis
+
+script:
+  - go test
