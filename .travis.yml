@@ -22,4 +22,4 @@ branches:
 script:
   - go test
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  - docker push $DOCKER_USERNAME/dockervault;
+  - docker push $DOCKER_USERNAME/dockervault:trav
