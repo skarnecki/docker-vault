@@ -9,7 +9,7 @@ go:
   - 1.7
 
 install:
-  - echo "no install"
+  - echo "no install!"
 
 matrix:
   allow_failures:
