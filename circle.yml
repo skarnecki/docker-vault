@@ -1,3 +1,13 @@
+dependencies:
+    pre:
+        # Temporary, using Go 1.7
+        - curl -O https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz && tar -xvf go1.7.linux-amd64.tar.gz && sudo bash -c 'rm -rf /usr/local/go && mv go /usr/local'
+        - go get -u github.com/alecthomas/gometalinter && gometalinter -ui
+        - go get -u github.com/jstemmer/go-junit-report
+        # Nuking outdated caches that might give problems between language updates
+        # see https://github.com/golang/go/issues/12703
+        - rm -rf /home/ubuntu/.go_workspace/pkg/*
+        - go version
 machine:
     environment:
         GODIST: "go1.7.linux-amd64.tar.gz"
